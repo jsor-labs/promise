@@ -7,35 +7,37 @@ namespace React\Promise\Internal;
  */
 final class Queue
 {
+    private $draining = false;
     private $queue = [];
 
     public function enqueue(callable $task)
     {
-        if (1 === array_push($this->queue, $task)) {
+        $this->queue[] = $task;
+
+        if (!$this->draining) {
             $this->drain();
         }
     }
 
     private function drain()
     {
-        for ($i = key($this->queue); isset($this->queue[$i]); $i++) {
-            $task = $this->queue[$i];
+        $this->draining = true;
 
-            $exception = null;
+        $exception = null;
 
+        while ($task = array_shift($this->queue)) {
             try {
                 $task();
             } catch (\Throwable $exception) {
             } catch (\Exception $exception) {
             }
-
-            unset($this->queue[$i]);
-
-            if ($exception) {
-                throw $exception;
-            }
         }
 
+        $this->draining = false;
         $this->queue = [];
+
+        if ($exception) {
+            throw $exception;
+        }
     }
 }
