@@ -260,6 +260,76 @@ trait CancelTestTrait
     }
 
     /** @test */
+    public function cancelShouldTriggerCancellationChainUpward()
+    {
+        $sequence = '';
+
+        $adapter1 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '4';
+        });
+
+        $promise1 = $adapter1->promise();
+
+        $adapter2 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '3';
+        });
+
+        $promise2 = $adapter2->promise();
+        $adapter2->resolve($promise1);
+
+        $adapter3 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '2';
+        });
+
+        $promise3 = $adapter3->promise();
+        $adapter3->resolve($promise2);
+
+        $adapter4 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '1';
+        });
+
+        $promise4 = $adapter4->promise();
+        $adapter4->resolve($promise3);
+
+        $promise4->cancel();
+
+        $this->assertEquals('1234', $sequence);
+    }
+
+    /** @test */
+    public function cancelShouldBreakUpwardCancellationChainWhenOneFolloweeHasAnotherFollower()
+    {
+        $sequence = '';
+
+        $adapter1 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '3';
+        });
+
+        $promise1 = $adapter1->promise();
+
+        // Break chain by creating an additional child promise
+        $promise1->then();
+
+        $adapter2 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '2';
+        });
+
+        $promise2 = $adapter2->promise();
+        $adapter2->resolve($promise1);
+
+        $adapter3 = $this->getPromiseTestAdapter(function () use (&$sequence) {
+            $sequence .= '1';
+        });
+
+        $promise3 = $adapter3->promise();
+        $adapter3->resolve($promise2);
+
+        $promise3->cancel();
+
+        $this->assertEquals('12', $sequence);
+    }
+
+    /** @test */
     public function cancelShouldNotTriggerCancellerWhenCancellingOnlyOneFollower()
     {
         $adapter1 = $this->getPromiseTestAdapter($this->expectCallableNever());
