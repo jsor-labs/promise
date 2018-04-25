@@ -6,6 +6,7 @@ class Promise implements ExtendedPromiseInterface, CancellablePromiseInterface
 {
     private $canceller;
     private $result;
+    private $cancellationParent;
 
     private $handlers = [];
     private $progressHandlers = [];
@@ -124,23 +125,25 @@ class Promise implements ExtendedPromiseInterface, CancellablePromiseInterface
         $canceller = $this->canceller;
         $this->canceller = null;
 
+        $cancellationParent = $this->cancellationParent;
+        $this->cancellationParent = null;
+
         $parentCanceller = null;
 
-        if (null !== $this->result) {
-            // Go up the promise chain and reach the top most promise which is
-            // itself not following another promise
-            $root = $this->unwrap($this->result);
-
-            // Return if the root promise is already resolved or a
-            // FulfilledPromise or RejectedPromise
-            if (!$root instanceof self || null !== $root->result) {
+        if ($cancellationParent) {
+            // Return if the parent promise is already resolved
+            // (either a FulfilledPromise or RejectedPromise)
+            if (
+                null !== $cancellationParent->result &&
+                !$cancellationParent->result instanceof self
+            ) {
                 return;
             }
 
-            $root->requiredCancelRequests--;
+            $cancellationParent->requiredCancelRequests--;
 
-            if ($root->requiredCancelRequests <= 0) {
-                $parentCanceller = [$root, 'cancel'];
+            if ($cancellationParent->requiredCancelRequests <= 0) {
+                $parentCanceller = [$cancellationParent, 'cancel'];
             }
         }
 
@@ -192,18 +195,22 @@ class Promise implements ExtendedPromiseInterface, CancellablePromiseInterface
 
     private function settle(ExtendedPromiseInterface $promise)
     {
+        $cancellationParent = $this->extract($promise);
+
+        if ($cancellationParent instanceof self) {
+            $cancellationParent->requiredCancelRequests++;
+            $this->cancellationParent = $cancellationParent;
+        } else {
+            // Unset canceller only when not following a pending promise
+            $this->canceller = null;
+        }
+
         $promise = $this->unwrap($promise);
 
         if ($promise === $this) {
             $promise = new RejectedPromise(
                 new \LogicException('Cannot resolve a promise with itself.')
             );
-        }
-
-        if ($promise instanceof self) {
-            $promise->requiredCancelRequests++;
-        } else {
-            $this->canceller = null;
         }
 
         $handlers = $this->handlers;
