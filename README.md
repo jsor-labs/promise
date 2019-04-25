@@ -196,11 +196,18 @@ $promise->done(callable $onFulfilled = null, callable $onRejected = null);
 Consumes the promise's ultimate value if the promise fulfills, or handles the
 ultimate error.
 
-It will cause a fatal error (`E_USER_ERROR`) if either `$onFulfilled` or
-`$onRejected` throw or return a rejected promise.
-
 Since the purpose of `done()` is consumption rather than transformation,
 `done()` always returns `null`.
+
+If either `$onFulfilled` or `$onRejected` throw or return a rejected promise,
+the rejection reason will be triggered as an error (`E_USER_ERROR`).
+
+Rejections ending up here should be considered fatal errors, similar to uncaught
+exceptions, and PHP's default error handling aborts the program.
+
+Note, that is **not recommended** to rethrow those errors as exceptions from a
+custom error handler. The behaviour is unpredictable and those exceptions might
+end up in the promise chain or even bubble out as uncaught exceptions.
 
 #### See also
 

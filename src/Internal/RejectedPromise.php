@@ -2,11 +2,11 @@
 
 namespace React\Promise\Internal;
 
+use React\Promise\ErrorHandler;
 use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 use function React\Promise\_checkTypehint;
 use function React\Promise\enqueue;
-use function React\Promise\fatalError;
 use function React\Promise\resolve;
 
 /**
@@ -42,17 +42,17 @@ final class RejectedPromise implements PromiseInterface
     {
         enqueue(function () use ($onRejected) {
             if (null === $onRejected) {
-                return fatalError($this->reason);
+                return ErrorHandler::fatal($this->reason);
             }
 
             try {
                 $result = $onRejected($this->reason);
             } catch (\Throwable $exception) {
-                return fatalError($exception);
+                return ErrorHandler::fatal($exception);
             }
 
             if ($result instanceof self) {
-                return fatalError($result->reason);
+                return ErrorHandler::fatal($result->reason);
             }
 
             if ($result instanceof PromiseInterface) {

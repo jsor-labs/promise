@@ -2,10 +2,10 @@
 
 namespace React\Promise\Internal;
 
+use React\Promise\ErrorHandler;
 use React\Promise\Promise;
 use React\Promise\PromiseInterface;
 use function React\Promise\enqueue;
-use function React\Promise\fatalError;
 use function React\Promise\resolve;
 
 /**
@@ -51,7 +51,7 @@ final class FulfilledPromise implements PromiseInterface
             try {
                 $result = $onFulfilled($this->value);
             } catch (\Throwable $exception) {
-                return fatalError($exception);
+                return ErrorHandler::fatal($exception);
             }
 
             if ($result instanceof PromiseInterface) {

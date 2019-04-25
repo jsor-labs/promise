@@ -223,13 +223,13 @@ trait PromiseRejectedTestTrait
 
         $adapter->reject(new Exception());
         self::assertNull($adapter->promise()->done(null, function () {
-            throw new Exception('Unhandled Rejection');
+            throw new Exception('Unhandled Rejection Error.');
         }));
 
         $errors = $errorCollector->stop();
 
         self::assertEquals(E_USER_ERROR, $errors[0]['errno']);
-        self::assertContains('Unhandled Rejection', $errors[0]['errstr']);
+        self::assertStringContainsString('Exception: Unhandled Rejection Error.', $errors[0]['errstr']);
     }
 
     /** @test */
@@ -242,13 +242,13 @@ trait PromiseRejectedTestTrait
 
         $adapter->reject(new Exception());
         self::assertNull($adapter->promise()->done(null, function () {
-            return reject(new Exception('Unhandled Rejection'));
+            return reject(new Exception('Unhandled Rejection Error.'));
         }));
 
         $errors = $errorCollector->stop();
 
         self::assertEquals(E_USER_ERROR, $errors[0]['errno']);
-        self::assertContains('Unhandled Rejection', $errors[0]['errstr']);
+        self::assertStringContainsString('Exception: Unhandled Rejection Error.', $errors[0]['errstr']);
     }
 
     /** @test */
@@ -259,7 +259,7 @@ trait PromiseRejectedTestTrait
 
         $adapter = $this->getPromiseTestAdapter();
 
-        $exception = new Exception('Unhandled Rejection');
+        $exception = new Exception('Unhandled Rejection Error.');
 
         $adapter->reject($exception);
         self::assertNull($adapter->promise()->done());
@@ -267,7 +267,7 @@ trait PromiseRejectedTestTrait
         $errors = $errorCollector->stop();
 
         self::assertEquals(E_USER_ERROR, $errors[0]['errno']);
-        self::assertEquals((string) $exception, $errors[0]['errstr']);
+        self::assertStringContainsString('Exception: Unhandled Rejection Error.', $errors[0]['errstr']);
     }
 
     /** @test */
@@ -276,7 +276,7 @@ trait PromiseRejectedTestTrait
         $errorCollector = new ErrorCollector();
         $errorCollector->start();
 
-        $exception = new Exception('UnhandledRejectionException');
+        $exception = new Exception('Unhandled Rejection Error.');
 
         $d = new Deferred();
         $d->resolve();
@@ -297,7 +297,7 @@ trait PromiseRejectedTestTrait
         $errors = $errorCollector->stop();
 
         self::assertEquals(E_USER_ERROR, $errors[0]['errno']);
-        self::assertEquals((string) $exception, $errors[0]['errstr']);
+        self::assertStringContainsString('Exception: Unhandled Rejection Error.', $errors[0]['errstr']);
     }
 
     /** @test */
@@ -305,7 +305,7 @@ trait PromiseRejectedTestTrait
     {
         $adapter = $this->getPromiseTestAdapter();
 
-        $adapter->reject(new Exception('UnhandledRejectionException'));
+        $adapter->reject(new Exception('Unhandled Rejection Error.'));
         self::assertNull($adapter->promise()->done(null, function (Exception $e) {
 
         }));

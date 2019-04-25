@@ -313,19 +313,6 @@ function enqueue(callable $task): void
 /**
  * @internal
  */
-function fatalError($error): void
-{
-    try {
-        \trigger_error($error, E_USER_ERROR);
-    } catch (\Throwable $e) {
-        \set_error_handler(null);
-        \trigger_error($error, E_USER_ERROR);
-    }
-}
-
-/**
- * @internal
- */
 function _checkTypehint(callable $callback, \Throwable $reason): bool
 {
     if (\is_array($callback)) {
